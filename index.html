@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font: 22px Arial;
+        }
+
+        #demo3::part(prefix) {
+            background-color: blue;
+            color: beige;
+            font-weight: bold;
+        }
+
+        #demo3::part(quote) {
+            font-style: italic;
+            font-weight: bold;
+            background: darkorange;
+            color: black;
+        }
+
+        #demo3[quote*="great"]::part(quote) {
+            background: gold;
+            color: blue;
+        }
+
+        #demo3[quotenr="0"]::part(quote) {
+            background: gold;
+            color: blue;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="https://github.com/reveal-quotes/reveal-quotes.github.io.git">GitHub source</a>
+    <hr>
+    <script>
+        customElements.define("reveal-quotes", class extends HTMLElement {
+            connectedCallback() {
+                let createElement = (tag, props = {}) => Object.assign(document.createElement(tag), props);
+                let dur = parseFloat(this.getAttribute("dur") || 2);
+                let [prefixbackground, prefixcolor] = (this.getAttribute("prefixcolors") || "blue,gold").split(",");
+                let [quotebackground, quotecolor] = (this.getAttribute("quotecolors") || "darkorange,black").split(",");
+                let cursor = this.getAttribute("cursor") || "2px solid black";
+                let quotes, quote, prefix, i = 0;
+                let display = () => {
+                    quote.style.animation = "none";
+                    quote.offsetHeight; /* trigger reflow */
+                    this.setAttribute("quotenr", i == quotes.length ? i = 0 : i); // set as attribute for optional styling
+                    this.setAttribute("quote", quote.innerHTML = quotes[i]); // set as attribute for optional styling
+                    //dur = quotes[i].length / 3;
+                    quote.style.animation = "quote " + dur + "s linear forwards";
+                }
+                setTimeout(() => { // wait till innerHTML is parsed
+                    [prefix, quotes] = this.innerHTML.split(":");
+                    quotes = quotes
+                        .split(",")
+                        .map(s => s.replaceAll("\n", "").trim())
+                        .filter(Boolean); // discard empty lines
+                    this.attachShadow({ mode: "open" })
+                        .append(
+                            createElement("style", {
+                                innerHTML: ":host{overflow:hidden;white-space:nowrap;display:inline-block}" +
+                                    "span{display:inline-block;overflow:hidden;padding:0 .2em}" +
+                                    "span{background:" + prefixbackground + ";color:" + prefixcolor + "}" +
+                                    "#quote{background:" + quotebackground + ";color:" + quotecolor + "}" +
+                                    "#quote{border-right:" + cursor + "}" +
+                                    "@keyframes quote{0%,100%{max-width:0}60%{max-width:100%}}"
+                            }),
+                            createElement("span", {
+                                part: "prefix",
+                                innerHTML: prefix// + ":"
+                            }),
+                            quote = createElement("span", {
+                                part: "quote",
+                                id: "quote",
+                                onanimationend: e => display(i++)
+                            }),
+                        )
+                    display(0);
+                });
+            }
+        });
+    </script>
+
+    <reveal-quotes dur="1" cursor="3px solid black">
+        Ervaar de: levenskracht,vrijheid binnen in jou zelf,wijsheid in jou zelf,rust
+    </reveal-quotes>
+    <reveal-quotes id="demo1">
+        Web Components are: awesome,great,fun,fabulous,amazing
+    </reveal-quotes>
+    <reveal-quotes id="demo2" prefixcolors="blue,beige" quotecolors="darkorange,black">
+        Web Components are: awesome,great,fun,fabulous,amazing
+    </reveal-quotes>
+    <reveal-quotes id="demo3">
+        Web Components are: awesome,great,fun,fabulous,amazing
+    </reveal-quotes>
+
+</body>
+
+</html>
